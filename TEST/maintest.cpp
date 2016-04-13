@@ -8,6 +8,8 @@
 
 using namespace sf;
 
+const int SizeCell = 64;
+
 int **init_arr(int n, int m)//n - размер массива с массивами, размер m - массива с данными;
 {
   int i = 0, j = 0;
@@ -47,10 +49,8 @@ void show_arr(int **arr, int n, int m)
 }
 
 class JC{
-protected:
-  int SizeCell;
-  int Mn, Nm; // Mn - size VertData(cell); Nm - size HorData(cell);
 public:
+  int Mn, Nm; // Mn - size VertData(cell); Nm - size HorData(cell);
 	int m, n; // m - heigth, n - width;
   int **VertData, **HorData;
 
@@ -65,7 +65,6 @@ public:
   void init_n_and_m(int a, int b){
     n = a;
     m = b;
-    SizeCell = 64;
     Nm = n / 2 + 1;
     Mn = m / 2 + 1;
   }
@@ -86,22 +85,22 @@ public:
 
 };
 
-class HorData : public JC{
+class HorData {
 public:
   Sprite HorDataSprite;
 
   void hor_data_position(int x, int y) {
-    HorDataSprite.setPosition(64*x, 64*(y+2);
+    HorDataSprite.setPosition(64*x, 64*(y+2));
   }
 
 };
 
-class VertData : public JC{
+class VertData {
 public:
   Sprite VertDataSprite;
 
   void vert_data_position(int x, int y) {
-		VertDataSprite.setPosition((x + 2)* 64, y* 64);
+		VertDataSprite.setPosition((x + 2)* SizeCell, y* SizeCell);
 	}
 
 };
@@ -112,9 +111,9 @@ int main()
   nng.init_n_and_m(3, 4);
   int Nm = nng.return_Nm();
   int Mn = nng.return_Mn();
-	RenderWindow window(sf::VideoMode(64*(2 + 3), 64*(2 + 4)), "TEST", Style::Close);
+	RenderWindow window(sf::VideoMode(SizeCell*(Nm + nng.n), SizeCell*(Mn + nng.m)), "TEST", Style::Close);
   Texture DataTexture;
-	DataTexture.loadFromFile("q/datacell.jpg");
+	DataTexture.loadFromFile("datacell.jpg");
 
   VertData vd[3][2];
   HorData hd[2][4];

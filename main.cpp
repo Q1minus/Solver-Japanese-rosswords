@@ -3,6 +3,8 @@
 
 using namespace sf;
 
+const int SizeCell = 32;
+
 class PlayField{
 public:
 	Sprite fieldsprite;
