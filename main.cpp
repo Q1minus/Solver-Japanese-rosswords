@@ -1,6 +1,7 @@
 /*Field creator*/
 
 #include <iostream>
+#include <fstream>
 #include <SFML/Graphics.hpp>
 
 using namespace sf;
@@ -11,8 +12,13 @@ class FieldCreator{
 public:
 	int m, n;
 	int **arr;
+	int w, h;
 	String File;
-	enum colors {GRAY, CROSS, BLACK} color;
+
+	Image menuImage;
+	Texture menuTexture;
+	Sprite menuSprite;
+
 	Image fieldImage;
 	Texture fieldTexture;
 	Sprite fieldSprite;
@@ -33,20 +39,27 @@ public:
 	}
 
 	FieldCreator(String F, int M, int N){
-		File = F; color = GRAY;
-		m = M; n = N;
+		File = F;//name cell sprite
+		m = M; n = N; //m = width, n = heigth cells
+		w = 5*32; h = 2*3*32;
+		arr = create_arr(M, N);
+
 		fieldImage.loadFromFile("images/" + File);
 		fieldTexture.loadFromImage(fieldImage);
 		fieldSprite.setTexture(fieldTexture);
 		fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
-		arr = create_arr(M, N);
 
-		for (int i = 0; i < M; i++)
-			for (int j = 0; j < N; j++)
+		menuImage.loadFromFile("images/menu.jpg");
+		menuTexture.loadFromImage(menuImage);
+		menuSprite.setTexture(menuTexture);
+		menuSprite.setTextureRect(IntRect(0, 0, w, h));
+
+		for (int i = 0; i < m; i++) // Zanulaem arr
+			for (int j = 0; j < n; j++)
 				arr[i][j] = 0;
 	}
 
-	void change_color(int click, int x, int y){
+	void change_color(int click, int x, int y){ //change color cell
 		switch (click) {
 			case 0://left button
 				if (arr[x][y] == 0 || arr[x][y] == 1){
@@ -70,14 +83,37 @@ public:
 		}
 	}
 
+	void Press(int button){ // Activated menu
+		switch (button) {
+			case 0://open
+				std::cout << "/* message OPEN*/" << std::endl;
+				break;
+			case 1://load
+				std::cout << "/* message LOAD*/" << std::endl;
+				break;
+			case 2://clear
+				for (int i = 0; i < m; i++)
+					for (int j = 0; j < n; j++)
+						arr[i][j] = 0;
+				break;
+			default:
+				break;
+		}
+	}
 
 };
 
 int main()
 {
-	FieldCreator creator("field.jpg", 20, 10);
+	int mc = 0, nc = 0;
+	std::cout << "m = ";
+	std::cin >> mc;
+	std::cout << "n = ";
+	std::cin >> nc;
 
-	RenderWindow window(sf::VideoMode(creator.m*32, creator.n*32), "Creator JC", Style::Close);
+	FieldCreator* creator = new FieldCreator("field.jpg", mc, nc);
+
+	RenderWindow window(sf::VideoMode((creator->m + 5)*SizeCell, creator->n*SizeCell), "Creator JC", Style::Close);
 
 	while (window.isOpen())
 	{
@@ -90,33 +126,44 @@ int main()
 			if(event.type == Event::MouseButtonPressed){
 				int xpos = Mouse::getPosition(window).x / SizeCell;
 				int ypos = Mouse::getPosition(window).y / SizeCell;
-				creator.change_color(event.mouseButton.button, xpos, ypos);
-			}
 
+				if (xpos >= 5){//chanhe color cell
+					creator->change_color(event.mouseButton.button, xpos - 5, ypos);
+				}
+				else if (xpos < 5){ // menu item
+					if(ypos >= 0 && ypos < 2)//OPEN
+						creator->Press(0);
+					if (ypos > 1 && ypos < 4)//LOAD
+						creator->Press(1);
+					if (ypos > 3 && ypos < 6)//CLEAR
+						creator->Press(2);
+				}
+
+			}
 		}
 
 		window.clear();
 
-		for (int j = 0; j < creator.n; j++){ // draw a field with reference to the array
-			for (int i = 0; i < creator.m; i++){
-				if (creator.arr[i][j] == 0){//GRAY
-					creator.fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
+		for (int j = 0; j < creator->n; j++){ // draw a field with reference to the array
+			for (int i = 0; i < creator->m; i++){
+				if (creator->arr[i][j] == 0){//GRAY
+					creator->fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
 				}
-				if (creator.arr[i][j] == 1){//CROSS
-					creator.fieldSprite.setTextureRect(IntRect(32, 0, SizeCell, SizeCell));
+				if (creator->arr[i][j] == 1){//CROSS
+					creator->fieldSprite.setTextureRect(IntRect(32, 0, SizeCell, SizeCell));
 				}
-				if (creator.arr[i][j] == 2){//BLACK
-					creator.fieldSprite.setTextureRect(IntRect(64, 0, SizeCell, SizeCell));
+				if (creator->arr[i][j] == 2){//BLACK
+					creator->fieldSprite.setTextureRect(IntRect(64, 0, SizeCell, SizeCell));
 				}
-				creator.fieldSprite.setPosition(i*SizeCell, j*SizeCell);
-				window.draw(creator.fieldSprite);
-				//std::cout << creator.arr[i][j] << " ";
 
+				creator->fieldSprite.setPosition( (i + 5)* SizeCell, j * SizeCell);
+				window.draw(creator->fieldSprite);
+				//std::cout << creator->arr[i][j] << " ";
 			}
 			//std::cout  << std::endl;
-
 		}
 
+		window.draw(creator->menuSprite);
 		window.display();
 	}
 	return 0;
