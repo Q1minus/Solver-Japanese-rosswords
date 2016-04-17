@@ -23,11 +23,10 @@ public:
 	Texture fieldTexture;
 	Sprite fieldSprite;
 
-	void Zanulaem(int **parr, int m, int n){
+	void zaminusone(int **parr, int m, int n){
 		for (int i = 0; i < m; i++) // Zanulaem arr
 			for (int j = 0; j < n; j++)
 				parr[i][j] = 0;
-
 	}
 
 	int **create_arr(int m, int n) {
@@ -103,33 +102,58 @@ public:
 			case 1:{//save
 				char fileName[20];
 				char topFile[40] = "Data/TopMatrix/";
+				char leftFile[40] = "Data/LeftMatrix/";
 
 				std::cout << "Crossword name: ";
 				std::cin >> fileName;
 				strcat(topFile, fileName);
+				strcat(leftFile, fileName);
 
-				std::ofstream topMatr; //create file
+				std::ofstream topMatr; //create file TOP
 				topMatr.open(topFile);
 
-				Zanulaem(topArr, m, n/2+1);
+				zaminusone(topArr, m, n/2+1);
 
 				for (int i = 0; i < m; i++) { // fill top Matrix int array
-						int k = 0;
-						for (int j = 0; j < n; j++) {
-							if (arr[i][j] == 2)
-								topArr[i][k]++;
-							else if (arr[i][j-1] == 2)
-								k++;
-						}
+					int k = 0;
+					for (int j = 0; j < n; j++) {
+						if (arr[i][j] == 2)
+							topArr[i][k]++;
+						else if (arr[i][j-1] == 2)
+							k++;
 					}
+				}
 
 				for (int i = 0; i < m; i++){ // road to file TOP
 					for (int j = 0; j < n/2 + 1; j++)
-						topMatr << topArr[i][j];
+						topMatr << topArr[i][j] << " ";
 					topMatr << std::endl;
 				}
 
-					topMatr.close();
+				topMatr.close();
+
+				std::ofstream leftMatr; //create file LEFT
+				leftMatr.open(leftFile);
+
+				zaminusone(leftArr, n, m/2+1);
+
+				for (int i = 0; i < n; i++) {
+					int q = 0;
+					for (int j = 0; j < m; j++) {
+						if(arr[j][i] == 2)
+							leftArr[i][q]++;
+						else if (j > 0 && arr[j-1][i] == 2)
+								q++;
+					}
+				}
+
+				for (int i = 0; i < n; i++){ // road to file LEFT
+					for (int j = 0; j < m/2 + 1; j++)
+						leftMatr << leftArr[i][j] << " ";
+					leftMatr << std::endl;
+				}
+
+				leftMatr.close();
 			}
 			break;
 			case 2://clear
