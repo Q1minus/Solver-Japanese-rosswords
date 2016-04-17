@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
+#include <cstdlib>
 #include <SFML/Graphics.hpp>
 
 using namespace sf;
@@ -10,10 +12,8 @@ const int SizeCell = 32;
 
 class FieldCreator{
 public:
-	int m, n;
-	int **arr;
-	int w, h;
-	String File;
+	int m, n, w, h;
+	int **arr, **topArr, **leftArr;
 
 	Image menuImage;
 	Texture menuTexture;
@@ -23,11 +23,22 @@ public:
 	Texture fieldTexture;
 	Sprite fieldSprite;
 
+	void Zanulaem(int **parr, int m, int n){
+		for (int i = 0; i < m; i++) // Zanulaem arr
+			for (int j = 0; j < n; j++)
+				parr[i][j] = 0;
+
+	}
+
 	int **create_arr(int m, int n) {
 		int **parr = new int *[m];
-		for (int i = 0; i < m; i++){
+
+		for (int i = 0; i < m; i++)
 			parr[i] = new int [n];
-		}
+
+		for (int i = 0; i < m; i++) // Zanulaem arr
+			for (int j = 0; j < n; j++)
+				parr[i][j] = 0;
 
 		return parr;
 	}
@@ -38,13 +49,15 @@ public:
     delete [] arr;
 	}
 
-	FieldCreator(String F, int M, int N){
-		File = F;//name cell sprite
+	FieldCreator(int M, int N){
 		m = M; n = N; //m = width, n = heigth cells
 		w = 5*32; h = 2*3*32;
-		arr = create_arr(M, N);
 
-		fieldImage.loadFromFile("images/" + File);
+		arr = create_arr(M, N);
+		topArr = create_arr(M, N/2 + 1);
+		leftArr = create_arr(N, M/2 + 1);
+
+		fieldImage.loadFromFile("images/field.jpg");
 		fieldTexture.loadFromImage(fieldImage);
 		fieldSprite.setTexture(fieldTexture);
 		fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
@@ -54,9 +67,6 @@ public:
 		menuSprite.setTexture(menuTexture);
 		menuSprite.setTextureRect(IntRect(0, 0, w, h));
 
-		for (int i = 0; i < m; i++) // Zanulaem arr
-			for (int j = 0; j < n; j++)
-				arr[i][j] = 0;
 	}
 
 	void change_color(int click, int x, int y){ //change color cell
@@ -86,11 +96,42 @@ public:
 	void Press(int button){ // Activated menu
 		switch (button) {
 			case 0://open
-				std::cout << "/* message OPEN*/" << std::endl;
+
+
+
 				break;
-			case 1://load
-				std::cout << "/* message LOAD*/" << std::endl;
-				break;
+			case 1:{//save
+				char fileName[20];
+				char topFile[40] = "Data/TopMatrix/";
+
+				std::cout << "Crossword name: ";
+				std::cin >> fileName;
+				strcat(topFile, fileName);
+
+				std::ofstream topMatr; //create file
+				topMatr.open(topFile);
+
+				Zanulaem(topArr, m, n/2+1);
+
+				for (int i = 0; i < m; i++) { // fill top Matrix int array
+						int k = 0;
+						for (int j = 0; j < n; j++) {
+							if (arr[i][j] == 2)
+								topArr[i][k]++;
+							else if (arr[i][j-1] == 2)
+								k++;
+						}
+					}
+
+				for (int i = 0; i < m; i++){ // road to file TOP
+					for (int j = 0; j < n/2 + 1; j++)
+						topMatr << topArr[i][j];
+					topMatr << std::endl;
+				}
+
+					topMatr.close();
+			}
+			break;
 			case 2://clear
 				for (int i = 0; i < m; i++)
 					for (int j = 0; j < n; j++)
@@ -111,7 +152,7 @@ int main()
 	std::cout << "n = ";
 	std::cin >> nc;
 
-	FieldCreator* creator = new FieldCreator("field.jpg", mc, nc);
+	FieldCreator* creator = new FieldCreator(mc, nc);
 
 	RenderWindow window(sf::VideoMode((creator->m + 5)*SizeCell, creator->n*SizeCell), "Creator JC", Style::Close);
 
