@@ -11,6 +11,25 @@ using namespace sf;
 
 const int SizeCell = 32;
 
+int parse(std::string s){
+	for (int i = 0; i < (int)s.length(); i++)
+		if (s[i] >= '0' && s[i] <= '9')
+			continue;
+		else
+			return 0;
+
+		return 1;
+}
+
+int strToInt(std::string a_str){
+	if ((int)a_str.length() <= 3 && parse(a_str) == 1)
+		return atoi(a_str.c_str());
+	else
+		std::cout << "ERROR!" << std::endl;
+
+	return 0;
+}
+
 class FieldCreator{
 public:
 	int m, n, w, h;
@@ -93,8 +112,7 @@ public:
 		}
 	}
 
-	int **read_arr(std::string fileName, int &m, int &n)//from file
-	{
+	int **read_arr(std::string fileName, int &m, int &n){
 		int flag = 1;
 		std::string matrix;
 		std::ifstream fin;
@@ -135,7 +153,6 @@ public:
 		/*Бежим по этой строке*/
 		while (matrix[i] != '\0'){
 			std::string numb;
-
 			/*Если не пробел, то цифру записываем в вспомогательную
 			строку numb, если пробел, то записываем всё из numb в матрицу-результат,
 			чистим numb*/
@@ -155,7 +172,6 @@ public:
 				k++;
 				kk = 0;
 			}
-
 			i++;
 		}
 
@@ -187,17 +203,22 @@ public:
 			}
 			break;
 			case 1:{//SAVE
-				char fileName[20];
-				char topFile[40] = "Data/TopMatrix/";
-				char leftFile[40] = "Data/LeftMatrix/";
+				/*Задаём матрицы данных*/
+				topM = m; topN = n/2 + 1;
+				leftM = n; leftN = m/2+1;
+				topArr = create_arr(topM, topN);
+				leftArr = create_arr(leftM, leftN);
 
+				/*Задаем имя файла, затем полный путь к матрицам*/
+				std::string fileName;
 				std::cout << "Crossword name: ";
 				std::cin >> fileName;
-				strcat(topFile, fileName);
-				strcat(leftFile, fileName);
+				std::string topFile = "Data/TopMatrix/" + fileName;
+				std::string leftFile = "Data/LeftMatrix/" + fileName;
 
-				std::ofstream topMatr; //create file TOP
-				topMatr.open(topFile);
+				/*Верхяя матрица*/
+				std::ofstream topMatr;
+				topMatr.open(topFile.c_str());
 
 				init_arr(topArr, m, n/2+1);
 
@@ -219,8 +240,9 @@ public:
 
 				topMatr.close();
 
-				std::ofstream leftMatr; //create file LEFT
-				leftMatr.open(leftFile);
+				/*Левая матрица*/
+				std::ofstream leftMatr;
+				leftMatr.open(leftFile.c_str());
 
 				init_arr(leftArr, n, m/2+1);
 
@@ -256,14 +278,47 @@ public:
 
 int main()
 {
-	/*Init heigth and width*/
-	int mc = 0, nc = 0;
-	std::cout << "m = ";
-	std::cin >> mc;
-	std::cout << "n = ";
-	std::cin >> nc;
+	/*Спрашиваем, хотят ли создать свой нонаграм.
+	Да - Задаем параметры поля m и n,
+	Нет - Появляется меню и поле 8х8(минисальное)*/
+	std::string m_str;
+	std::string n_str;
+	int m = 0, n = 0;
+	std::string answer;
 
-	FieldCreator creator(mc, nc);
+	std::cout << "You want to create your nonagram? (y/n): ";
+	std::cin >> answer;
+
+ 	if (answer == "y" || answer == "yes") {
+			std::cout << "-> Min size 8x8" << std::endl;
+			std::cout << "-> Max size 100x100" << std::endl;
+			std::cout << "-> Horizontal length m = ";
+			std::cin >> m_str;
+			m = strToInt(m_str);
+
+			std::cout << "-> Vertical length n = ";
+			std::cin >> n_str;
+			n = strToInt(n_str);
+
+			if (m < 8 || n < 8){
+				std::cout << "-> Set min size 8x8" << std::endl;
+				m = 8;
+				n = 8;
+			}
+			if(m > 100 && n > 100){
+				std::cout << "-> Set max size 100x100" << std::endl;
+				m = 100;
+				n = 100;
+			}
+
+	} else {
+		std::cout << "Set min size 8x8\n" << std::endl;
+		m = 8;
+		n = 8;
+	}
+
+	/*Создаем поле*/
+	FieldCreator creator(m, n);
 
 	RenderWindow window(sf::VideoMode((creator.m + 5)*SizeCell, creator.n*SizeCell), "Creator JC", Style::Close);
 
