@@ -5,7 +5,6 @@
 #include <sstream>
 #include <SFML/Graphics.hpp>
 
-
 using namespace sf;
 
 const int SizeCell = 32;
@@ -66,15 +65,14 @@ void destroy_arr(int **arr, int m)
 	delete [] arr;
 }
 
-
-class FieldCreator{
-public:
-	int m, n, w, h;
+class FieldCreator {
+private:
+	int w, h;
 	int topM, topN, leftM, leftN;
 	int **arr, **topArr, **leftArr;
 	std::string nonName;
 
-	enum States {MAIN, CREATE, SOLVE, FIELD, CREATOR} state;
+	enum States {MAIN, CREATE, SOLVE, CREATOR} state;
 
 	Image fieldImage;
 	Texture fieldTexture;
@@ -84,163 +82,76 @@ public:
 	Font font;
 	Text text;
 
-	void SetMandN(int M, int N)
+	void minimization_arr(int **arr, int &m, int &n)
 	{
-		m = M; n = N; //m = width, n = heigth cells
-		arr = create_arr(M, N);
-	}
+		/*Пробегаемся по массиву, пока не встретим
+		ряд нулей, удаляем все ряды нулей*/
+		for (int i = 0; i < n; i++) {
+			int flag = 0;
 
-	FieldCreator(int M, int N)
-	{
-		m = M; n = N; //m = width, n = heigth cells
-		topM = topN = 0;
-		leftM = leftN = 0;		
-
-		font.loadFromFile("Font.ttf");
-		text.setFont(font);
-		text.setCharacterSize(24);
-		text.setColor(Color::Black);
-		text.setStyle(Text::Bold);
-
-		arr = create_arr(M, N);
-		topArr = create_arr(0, 0);
-		leftArr = create_arr(0, 0);
-
-		fieldImage.loadFromFile("images/field.jpg");
-		fieldTexture.loadFromImage(fieldImage);
-		fieldSprite.setTexture(fieldTexture);
-		fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
-
-		matrixSprite.setTexture(fieldTexture);
-		matrixSprite.setTextureRect(IntRect(96, 0, SizeCell, SizeCell));
-
-	}
-
-	void change_color(int click, int x, int y)
-	{
-		switch (click) {
-			case 0://left button
-				if (arr[x][y] == 0 || arr[x][y] == 1){
-					arr[x][y] = 2;
-				}else{
-					arr[x][y] = 0;
-				}
-				break;
-			case 1://right button
-				if (arr[x][y] == 0 || arr[x][y] == 2){
-					arr[x][y] = 1;
-				}else {
-					arr[x][y] = 0;
-				}
-				break;
-			case 2:
-				arr[x][y] = 0;
-				break;
-			default:
-				break;
-		}
-	}
-
-	int **read_arr(std::string fileName, int &m, int &n)
-	{
-		int flag = 1;
-		std::string matrix;
-		std::ifstream fin;
-		fin.open(fileName.c_str());
-
-		/*Создаем Matrix строку, находим m и n для дальнейшего
-		создания матрицы-результата*/
-		if(!fin.is_open()){
-			std::cout << "Error! File not found!" << std::endl;
-			return 0;
-		}
-		else{
-			/*Пробегаемся до конца файла*/
-			while (!fin.eof()) {
-				std::string s;
-				getline(fin, s);
-				matrix += s + '\n';
-
-				/*Пробегаемся по строке*/
-				if(flag == 1){
-					for (int i = 0; i < (int)s.length(); i++)
-						if(s[i] == ' ')
-							n++;
+			for (int j = 0; j < m; j++) {
+				/*Если встретим нулевой столбец, удаляем
+				его и всё, что после*/
+				if (arr[j][i] != 0){
 					flag = 0;
+					break;
 				}
-				m++;
+				else
+					flag = 1;
+			}
 
+			if (flag == 1){
+				n = i;
+				break;
 			}
 		}
-		fin.close();
-		matrix[matrix.length()-1] = '\0';
-
-		/*Matrix - строка, в которой хранится матрица из файла,
-		последний элемент ненужный нам \n, мы его удаляем, --m - из-за \n*/
-
-		int **parr = create_arr(--m, n);
-		int i = 0, k = 0, kk = 0, j = 0;
-
-		/*Бежим по этой строке*/
-		while (matrix[i] != '\0'){
-			std::string numb;
-			/*Если не пробел, то цифру записываем в вспомогательную
-			строку numb, если пробел, то записываем всё из numb в матрицу-результат,
-			чистим numb*/
-			if(matrix[i] != ' ') {
-				numb[j++] = matrix[i];
-			}
-			else {
-				parr[k][kk++] = atoi(numb.c_str());
-				j = 0;
-				while (numb[j] != '\0')
-					numb[j++] = 0;
-				j = 0;
-			}
-			/*Если \n переходим к следующему указателю по m,
-			указатель по n возвращаем в начало*/
-			if (matrix[i] == '\n'){
-				k++;
-				kk = 0;
-			}
-			i++;
-		}
-
-		return parr;
 	}
 
 	void Press(int button)
 	{
 		switch (button) {
-			/*OPEN*/
+			/*OPENcr*/
 			case 0:
 			{
 				/*Разрушаем старые матрицы, создаем новые
 				(для повторного открытия)*/
 				destroy_arr(topArr, topM);
 				destroy_arr(leftArr, leftM);
-				topArr = create_arr(0, 0);
-				leftArr = create_arr(0, 0);
+				//topArr = create_arr(0, 0);
+				//leftArr = create_arr(0, 0);
 				topN = topM = 0;
 				leftN = leftM = 0;
 				nonName = "";
-				std::string fileName = "";
+
+				std::ifstream list;
+				list.open("list.txt");
+				int i = 0;
+
+				if(!list.is_open()){
+					std::cout << "Error! File not open!" << std::endl;
+					return;
+				}
+				else{
+					while (!list.eof()) {
+						std::string s;
+						getline(list, s);
+						i++;
+					}
+				}
+				list.close();
+
+				std::string fileName = winList(--i);
 
 				/*Вводим имя кроссворда, прописываем полный
 				путь, создаем матрицу*/
-				std::cout << "Crossword name: ";
-				std::cin >> fileName;
 				std::string topFile = "Data/TopMatrix/" + fileName;
 				std::string leftFile = "Data/LeftMatrix/" + fileName;
-				nonName = "Data/" + fileName; ;
+				nonName = "Data/" + fileName;
 
 				/*Проверка на наличие файла*/
 				topArr = read_arr(topFile, topM, topN);
-				if (!topArr)
-					return;
+
 				leftArr = read_arr(leftFile, leftM, leftN);
-				if (!topArr)
-					return;
 
 				/*Минимизируем матрицы*/
 				minimization_arr(topArr, topM, topN);
@@ -248,8 +159,10 @@ public:
 
 				/*Пересоздаем поле*/
 				destroy_arr(arr, m);
-				m = topM; n = leftM;
-				arr = create_arr(m, n);
+				//m = topM; n = leftM;
+
+				m = 0; n = 0;
+				arr = read_arr(nonName, m, n);
 			}
 			break;
 
@@ -263,10 +176,43 @@ public:
 				leftM = n; leftN = m/2 + 1;
 				topArr = create_arr(topM, topN);
 				leftArr = create_arr(leftM, leftN);
+				nonName = "";
 
 				/*Задаем имя файла, затем полный путь к матрицам*/
+				std::ifstream list;
+				list.open("list.txt");
+				int i = 0;
 
-				nonName = "Crossword#1";
+				if(!list.is_open()){
+					std::cout << "Error! File not open!" << std::endl;
+					return;
+				}
+				else{
+					/*Пробегаемся до конца файла*/
+					while (!list.eof()) {
+						std::string s;
+						getline(list, s);
+						i++;
+					}
+				}
+				list.close();
+
+				std::stringstream buff;
+				buff << "Nonagram#" << i;
+				buff >> nonName;
+
+				std::ofstream list2;
+				list2.open("list.txt", std::ios::app);
+
+				if(!list2.is_open()){
+					std::cout << "Error! File not open!" << std::endl;
+					return;
+				}
+				else
+				list2 << nonName << "\n";
+
+				list2.close();
+
 				std::cout << nonName << std::endl;
 				std::string topFile = "Data/TopMatrix/" + nonName;
 				std::string leftFile = "Data/LeftMatrix/" + nonName;
@@ -363,34 +309,276 @@ public:
 			}
 				break;
 
+			case 4:
+			{
+				/*Разрушаем старые матрицы, создаем новые
+				(для повторного открытия)*/
+				destroy_arr(topArr, topM);
+				destroy_arr(leftArr, leftM);
+				//topArr = create_arr(0, 0);
+				//leftArr = create_arr(0, 0);
+				topN = topM = 0;
+				leftN = leftM = 0;
+				nonName = "";
+
+				std::ifstream list;
+				list.open("list.txt");
+				int i = 0;
+
+				if(!list.is_open()){
+					std::cout << "Error! File not open!" << std::endl;
+					return;
+				}
+				else{
+					while (!list.eof()) {
+						std::string s;
+						getline(list, s);
+						i++;
+					}
+				}
+				list.close();
+
+				std::string fileName = winList(--i);
+
+				/*Вводим имя кроссворда, прописываем полный
+				путь, создаем матрицу*/
+				std::string topFile = "Data/TopMatrix/" + fileName;
+				std::string leftFile = "Data/LeftMatrix/" + fileName;
+				nonName = "Data/" + fileName;
+
+				/*Проверка на наличие файла*/
+				topArr = read_arr(topFile, topM, topN);
+
+				leftArr = read_arr(leftFile, leftM, leftN);
+
+				/*Минимизируем матрицы*/
+				minimization_arr(topArr, topM, topN);
+				minimization_arr(leftArr, leftM, leftN);
+
+				/*Пересоздаем поле*/
+				destroy_arr(arr, m);
+				m = topM; n = leftM;
+
+				arr = create_arr(m, n);
+			}
+				break;
+
+			case 5:
+			{
+				//int **trueArr = create_arr(m, n);
+				int m = 0, n = 0;
+				int **trueArr =	read_arr(nonName, m, n);
+
+				for (int i = 0; i < m; i++)
+					for (int j = 0; j < n; j++){
+
+						if (trueArr[i][j] == 1 && arr[i][j] == 2)
+							arr[i][j] = 3;
+
+						if (trueArr[i][j] == 2 && arr[i][j] == 1)
+							arr[i][j] = 3;
+
+					}
+
+					destroy_arr(trueArr, m);
+				break;
+			}
+				break;
+
 			default:
 				break;
 		}
 	}
 
-	void minimization_arr(int **arr, int &m, int &n)
+	void change_color(int click, int x, int y)
 	{
-		/*Пробегаемся по массиву, пока не встретим
-		ряд нулей, удаляем все ряды нулей*/
-		for (int i = 0; i < n; i++) {
-			int flag = 0;
-
-			for (int j = 0; j < m; j++) {
-				/*Если встретим нулевой столбец, удаляем
-				его и всё, что после*/
-				if (arr[j][i] != 0){
-					flag = 0;
-					break;
-				}
-				else
-					flag = 1;
+		switch (click) {
+			case 0://left button
+			if (arr[x][y] == 0 || arr[x][y] == 1){
+				arr[x][y] = 2;
+			}else{
+				arr[x][y] = 0;
 			}
+			break;
+			case 1://right button
+			if (arr[x][y] == 0 || arr[x][y] == 2){
+				arr[x][y] = 1;
+			}else {
+				arr[x][y] = 0;
+			}
+			break;
+			case 2:
+			arr[x][y] = 0;
+			break;
+			default:
+			break;
+		}
+	}
 
-			if (flag == 1){
-				n = i;
-				break;
+
+	std::string winList(int i)
+	{
+		RenderWindow win(sf::VideoMode(5 * SizeCell, i * SizeCell), "List", sf::Style::Close);
+		win.setPosition(Vector2i(0, 0));
+		std::string result = "";
+		std::stringstream buff;
+
+		while (win.isOpen())
+		{
+			Event ev;
+
+			while (win.pollEvent(ev)) {
+				if(ev.type == sf::Event::Closed){
+					win.close();
+				}
+
+				if(ev.type == Event::MouseButtonPressed){
+					int xp = Mouse::getPosition(win).x / SizeCell;
+					int yp = Mouse::getPosition(win).y / SizeCell;
+					buff << "Nonagram#" << GetName(xp, yp);
+					buff >> result;
+					win.close();
+				}
+
+			}//while event
+
+			win.clear();
+			DrawList(&win, i);
+			win.display();
+		}
+
+		return result;
+	}
+
+	int **read_arr(std::string fileName, int &m, int &n)
+	{
+		int flag = 1;
+		std::string matrix;
+		std::ifstream fin;
+		fin.open(fileName.c_str());
+
+		/*Создаем Matrix строку, находим m и n для дальнейшего
+		создания матрицы-результата*/
+		if(!fin.is_open()){
+			std::cout << "Error! File not found!" << std::endl;
+			return 0;
+		}
+		else{
+			/*Пробегаемся до конца файла*/
+			while (!fin.eof()) {
+				std::string s;
+				getline(fin, s);
+				matrix += s + '\n';
+
+				/*Пробегаемся по строке*/
+				if(flag == 1){
+					for (int i = 0; i < (int)s.length(); i++)
+						if(s[i] == ' ')
+							n++;
+					flag = 0;
+				}
+				m++;
+
 			}
 		}
+		fin.close();
+		matrix[matrix.length()-1] = '\0';
+
+		/*Matrix - строка, в которой хранится матрица из файла,
+		последний элемент ненужный нам \n, мы его удаляем, --m - из-за \n*/
+
+		int **parr = create_arr(--m, n);
+		int i = 0, k = 0, kk = 0, j = 0;
+
+		/*Бежим по этой строке*/
+		while (matrix[i] != '\0'){
+			std::string numb;
+			/*Если не пробел, то цифру записываем в вспомогательную
+			строку numb, если пробел, то записываем всё из numb в матрицу-результат,
+			чистим numb*/
+			if(matrix[i] != ' ') {
+				numb[j++] = matrix[i];
+			}
+			else {
+				parr[k][kk++] = atoi(numb.c_str());
+				j = 0;
+				while (numb[j] != '\0')
+					numb[j++] = 0;
+				j = 0;
+			}
+			/*Если \n переходим к следующему указателю по m,
+			указатель по n возвращаем в начало*/
+			if (matrix[i] == '\n'){
+				k++;
+				kk = 0;
+			}
+			i++;
+		}
+
+		return parr;
+	}
+
+	int GetName(int x, int y)
+	{
+		return y % 32 + 1;
+	}
+
+public:
+	int m, n;
+
+	void SetMandN(int M, int N)
+	{
+		m = M; n = N; //m = width, n = heigth cells
+		arr = create_arr(M, N);
+	}
+
+	FieldCreator(int M, int N)
+	{
+		m = M; n = N; //m = width, n = heigth cells
+		topM = topN = 0;
+		leftM = leftN = 0;
+
+		font.loadFromFile("Font.ttf");
+		text.setFont(font);
+		text.setCharacterSize(24);
+		text.setColor(Color::Black);
+		text.setStyle(Text::Bold);
+
+		arr = create_arr(M, N);
+		topArr = create_arr(0, 0);
+		leftArr = create_arr(0, 0);
+
+		fieldImage.loadFromFile("images/field.jpg");
+		fieldTexture.loadFromImage(fieldImage);
+		fieldSprite.setTexture(fieldTexture);
+		fieldSprite.setTextureRect(IntRect(0, 0, SizeCell, SizeCell));
+
+		matrixSprite.setTexture(fieldTexture);
+		matrixSprite.setTextureRect(IntRect(96, 0, SizeCell, SizeCell));
+
+	}
+
+	void DrawList(RenderWindow *window, int n)
+	{
+		text.setCharacterSize(12);
+		text.setColor(Color::White);
+
+		int x = 0, y = 0;
+
+		for (int i = 0; i < n; i++)
+		{
+			std::string nonName;
+			std::stringstream buff;
+			buff << "Nonagram#" << i+1;
+			buff >> nonName;
+
+			text.setString(nonName);
+			text.setPosition( (x + 0.5) * SizeCell, (y + 0.5) * SizeCell);
+			y += 1;
+
+			window->draw(text);
+		}
+
 	}
 
 	void DrawField(RenderWindow *window)
@@ -406,6 +594,9 @@ public:
 				}
 				if (arr[i][j] == 2){//BLACK
 					fieldSprite.setTextureRect(IntRect(64, 0, SizeCell, SizeCell));
+				}
+				if (arr[i][j] == 3){ //RED
+					fieldSprite.setTextureRect(IntRect(128, 0, SizeCell, SizeCell));
 				}
 
 				fieldSprite.setPosition( (leftN + i + 5)*SizeCell, (topN + j) * SizeCell);
@@ -424,9 +615,13 @@ public:
 			for (int j = 0; j < leftN; j++) {
 				int X = (j + 5) * SizeCell;
 				int Y =  (i + topN) * SizeCell;
+
+			//std::cout << leftArr[i][j] << " ";
+
 				matrixSprite.setPosition(X, Y);
 				window->draw(matrixSprite);
 			}
+			//std::cout << std::endl;
 		}
 
 		for (int i = 0; i < leftM; i++) {
@@ -437,12 +632,22 @@ public:
 				int Y =  (i + topN) * SizeCell;
 
 				if (leftArr[i][j]) {
+					text.setColor(Color::Black);
 					std::ostringstream matrixItem;
 					matrixItem << leftArr[i][j];
+
+					if (leftArr[i][j] >= 10)
+						text.setCharacterSize(15);
+					else
+						text.setCharacterSize(24);
+
 					text.setPosition(X + 2, Y + 2);
 					text.setString(matrixItem.str());
 					window->draw(text);
 				}
+
+
+
 			}
 		}
 
@@ -471,6 +676,12 @@ public:
 				if (topArr[i][j]){
 					std::ostringstream matrixItem;
 					matrixItem << topArr[i][j];
+
+					if (topArr[i][j] >= 10)
+						text.setCharacterSize(15);
+					else
+						text.setCharacterSize(24);
+
 					text.setPosition(X + 2, Y + 2);
 					text.setString(matrixItem.str());
 					window->draw(text);
@@ -492,9 +703,17 @@ public:
 		}
 		else if (xpos < 5) {
 
-			/*OPEN*/
-			if (ypos >= 0 && ypos < 2) {
+			/*OPEN CREATE*/
+			if (st == CREATOR && ypos >= 0 && ypos < 2) {
 				Press(0);
+				int X = (leftN + m + 5)*SizeCell;
+				int Y = (n + topN)*SizeCell;
+				window->create(sf::VideoMode(X, Y), "Nonagram", sf::Style::Close);
+			}
+
+			/*OPEN SOLVE*/
+			if (st == SOLVE && ypos >= 0 && ypos < 2) {
+				Press(4);
 				int X = (leftN + m + 5)*SizeCell;
 				int Y = (n + topN)*SizeCell;
 				window->create(sf::VideoMode(X, Y), "Nonagram", sf::Style::Close);
@@ -516,6 +735,9 @@ public:
 			if (st == SOLVE && ypos > 5 && ypos < 8)
 				Press(3);
 
+			if (st == SOLVE && ypos >= 8 && ypos <= 10)
+				Press(5);
+
 		}
 
 	}
@@ -524,9 +746,8 @@ public:
 
 class Menu
 {
-public:
-	int w, h;
-	enum States {MAIN, CREATE, SOLVE, FIELD, CREATOR} state;
+private:
+	enum States {MAIN, CREATE, SOLVE, CREATOR} state;
 
 	Image image;
 	Texture texture;
@@ -534,6 +755,106 @@ public:
 
 	Font font;
 	Text text;
+
+	void MenuCreator(RenderWindow *window)
+	{
+		int x = 0 * SizeCell;
+		int y = 0 * SizeCell;
+		int n = 3;
+
+		std::string titles[] = {"Load", "Save", "Clear"}; // Заголовки
+		text.setCharacterSize(24);
+		sprite.setScale((float)1/3, (float)1/3);
+
+		for (int i = 0; i < n; i++) {
+			sprite.setPosition(x * SizeCell, y * SizeCell);
+			text.setString(titles[i]);
+			text.setPosition( (x + 1) * SizeCell, (y + 0.75) * SizeCell);
+			y += 2;
+
+			window->draw(sprite);
+			window->draw(text);
+		}
+
+	}
+
+	void MenuSolve(RenderWindow *window)
+	{
+		int x = 0 * SizeCell;
+		int y = 0 * SizeCell;
+		int n = 5;
+
+		std::string titles[] = {"Load", "Save", "Clear", "Solve", "Check"}; // Заголовки
+		text.setCharacterSize(24);
+		sprite.setScale((float)1/3, (float)1/3);
+
+		for (int i = 0; i < n; i++) {
+			sprite.setPosition(x * SizeCell, y * SizeCell);
+			text.setString(titles[i]);
+			text.setPosition( (x + 1) * SizeCell, (y + 0.75) * SizeCell);
+			y += 2;
+
+			window->draw(sprite);
+			window->draw(text);
+		}
+	}
+
+	void MainMenu(RenderWindow *window)
+	{
+		std::string titles[] = {"Solve", "Create", "Exit"}; // Заголовки
+		MenuTemplate(window, 3, 0, 0, titles);
+	}
+
+	void InputMenu(RenderWindow *window)
+	{
+		int x = 0 * SizeCell, y = 0 * SizeCell; // Положение спрайта
+		int n = 12; // Количество кнопок
+
+		std::string titles[] = {"10x10", "10x15", "10x20",
+														"15x30", "20x20", "20x25",
+														"20x30", "25x20", "25x25",
+														"25x30", "30x15", "30x20"};
+
+		text.setCharacterSize(40);
+		sprite.setScale(1,1);
+
+		for (int i = 0; i < n; i++) {
+			sprite.setPosition(x, y);
+			text.setString(titles[i]);
+			text.setPosition( x + 2.5 * SizeCell, y + 2.5 * SizeCell);
+			y += 6 * SizeCell;
+
+			if (i % 4 == 3) {
+				y = 0 * SizeCell;
+				x += 15 * SizeCell;
+			}
+
+
+			window->draw(sprite);
+			window->draw(text);
+		}
+
+	}
+
+	void MenuTemplate(RenderWindow *window, int n, int x, int y, std::string titles[])
+	{
+		x *= SizeCell, y *= SizeCell; // Положение спрайта
+		sprite.setScale(1, 1);
+
+		for (int i = 0; i < n; i++) {
+			sprite.setPosition(x, y);
+			text.setString(titles[i]);
+			text.setPosition( x + 1.4 * SizeCell, y + 2.5 * SizeCell);
+			y += 6 * SizeCell;
+
+			window->draw(sprite);
+			window->draw(text);
+		}
+
+	}
+
+public:
+	int w, h;
 
 	Menu()
 	{
@@ -561,29 +882,11 @@ public:
 				InputMenu(window);
 				break;
 			case SOLVE:
-				break;
-			case FIELD:
+				MenuSolve(window);
 				break;
 			case CREATOR:
 				MenuCreator(window);
 				break;
-		}
-
-	}
-
-	void MenuTemplate(RenderWindow *window, int n, int x, int y, std::string titles[])
-	{
-		x *= SizeCell, y *= SizeCell; // Положение спрайта
-		sprite.setScale(1, 1);
-
-		for (int i = 0; i < n; i++) {
-			sprite.setPosition(x, y);
-			text.setString(titles[i]);
-			text.setPosition( x + 1.4 * SizeCell, y + 2.5 * SizeCell);
-			y += 6 * SizeCell;
-
-			window->draw(sprite);
-			window->draw(text);
 		}
 
 	}
@@ -647,8 +950,9 @@ public:
 			}
 				break;
 			case SOLVE:
-				break;
-			case FIELD:
+			{
+				cr->Click(window, event, state);
+			}
 				break;
 			case CREATOR:
 			{
@@ -659,78 +963,15 @@ public:
 
 	}
 
-	void MenuCreator(RenderWindow *window)
-	{
-		int x = 0 * SizeCell;
-		int y = 0 * SizeCell;
-		int n = 3;
-
-		std::string titles[] = {"Load", "Save", "Clear"}; // Заголовки
-		text.setCharacterSize(24);
-		sprite.setScale((float)1/3, (float)1/3);
-
-		for (int i = 0; i < n; i++) {
-			sprite.setPosition(x * SizeCell, y * SizeCell);
-			text.setString(titles[i]);
-			text.setPosition( (x + 1) * SizeCell, (y + 0.75) * SizeCell);
-			y += 2;
-
-			window->draw(sprite);
-			window->draw(text);
-		}
-
-	}
-
-	void MenuField(RenderWindow *window)
-	{
-		std::string titles[] = {"Check", "Hint", "Clear", "Solve", "Save"}; // Заголовки
-		MenuTemplate(window, 5, 0, 0, titles);
-	}
-
-	void MainMenu(RenderWindow *window)
-	{
-		std::string titles[] = {"Solve", "Create", "Exit"}; // Заголовки
-		MenuTemplate(window, 3, 0, 0, titles);
-	}
-
-	void InputMenu(RenderWindow *window)
-	{
-		int x = 0 * SizeCell, y = 0 * SizeCell; // Положение спрайта
-		int n = 12; // Количество кнопок
-
-		std::string titles[] = {"10x10", "10x15", "10x20",
-														"15x30", "20x20", "20x25",
-														"20x30", "25x20", "25x25",
-														"25x30", "30x15", "30x20"};
-
-		text.setCharacterSize(40);
-		sprite.setScale(1,1);
-
-		for (int i = 0; i < n; i++) {
-			sprite.setPosition(x, y);
-			text.setString(titles[i]);
-			text.setPosition( x + 2.5 * SizeCell, y + 2.5 * SizeCell);
-			y += 6 * SizeCell;
-
-			if (i % 4 == 3) {
-				y = 0 * SizeCell;
-				x += 15 * SizeCell;
-			}
-
-
-			window->draw(sprite);
-			window->draw(text);
-		}
-
-	}
-
 	void Press(int button, RenderWindow *window)
 	{
 		switch (button) {
 			/*SOLVE*/
 			case 0:
 			{
-				std::cout << "1" << std::endl;
+				window->create(sf::VideoMode(5*SizeCell, 2*5*SizeCell), "Nonagram", sf::Style::Close);
+				window->setPosition(Vector2i(600, 237));
+				state = SOLVE;
 			}
 				break;
 
@@ -739,6 +980,7 @@ public:
 			{
 				w = 45 * SizeCell, h = 24 * SizeCell;
 				window->create(sf::VideoMode(w, h), "Create", sf::Style::Close);
+				window->setPosition(Vector2i(600, 237));
 				state = CREATE;
 			}
 				break;
@@ -755,9 +997,7 @@ public:
 		}
 	}
 
-
 };
-
 
 int main()
 {
